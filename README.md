@@ -1,28 +1,119 @@
 # spal
-Scripts Package Assembler for Linux. Helps assemble your executable scripts into distributable packages.
+Scripts Package Assembler for Linux. Helps assemble executable scripts into distributable packages. Useful for packaging Python and/or shell scipts.
 
 # Platform support
 
 - Currently supports `.deb` packages only
 - Supported package managers: `pkg`, `apt`.
 
-### Commands to be supported:
+# Help section:
 
 ```
-spal {-g | --generate-buildcfg} \
-    --pkgmgr <pkg-mgr> \
-    --dist <dist> \
-    --comp <comp> \
-    --shellscript <shell-script> \
-    --control <control-file> \
-    [--srcroot <src-rootdir> [--exclude <file-1> <file-2> ...]] \
-    [--man <man-filename>] \
-    [--copyright <copyright-filename>] \
-    [--outfile <output-filename>]
+Help for spal (version 1.0)
 
-spal [{-k | --keep-buildtree}] <build-cfg> <out-dir>
+spal: Scripts Package Assembler for Linux. Helps assemble executable scripts
+into distributable packages. Currently supports building .deb packages only.
 
-spal [{-h | --help}]
+#1 Possible usage patterns:
+  1. spal {-g | --generate-buildcfg} \
+         --pkgmgr <pkg-mgr> \
+         --dist <dist> \
+         --comp <comp> \
+         --shellscript <shell-script> \
+         --control <control-file> \
+         [--srcroot <src-rootdir> [--exclude <file-1> ... <file-n>]] \
+         [--man <man-filename>] \
+         [--copyright <copyright-filename>] \
+         [--outfile <output-filename>]
+  2. spal [{-k | --keep-buildtree}] <buildcfg> <outdir>
+  3. spal [{-h | --help}]
+  4. spal {-v | --version}
 
-spal {-v | --version}
+#2 Meanings of notations used above:
+  - <...>       :  A mandatory value for the preceding option. A
+                   value must not contain a space anywhere.
+
+  - {... | ...} :  A shorthand and full name for the same option.
+
+  - [...]       :  Non-mandatory options.
+  
+  - [... [...]] :  Two non-mandatory options, but the inner option
+                   may not be specified without the outer option.
+
+#3 Available options:
+  1. -g, --generate-buildcfg  :  Specify to generate a build config file. See
+                                 section #1 pattern (1) for usage.
+
+  2. --pkgmgr                 :  Specify the package manager to be used for the
+                                 build process. Currently supported package
+                                 managers are: ['apt', 'pkg'].
+
+  3. --dist                   :  Specify the package distribution name (e.g.,
+                                 "stable").
+
+  4. --comp                   :  Specify the package component name (e.g.,
+                                 "main").
+
+  5. --shellscript            :  Specify the main executable shell script that
+                                 would put in /usr/bin.
+
+  6. --control                :  Specify the control file for building the .deb
+                                 package.
+
+  7. --srcroot                :  Specify the root directory of the source tree,
+                                 if any. Installed package puts source files at
+                                 /usr/lib/<package-name>.
+
+  8. --exclude                :  Specify the files in the source root directory
+                                 that would be excluded. May be specified only
+                                 when --srcroot is specified.
+
+  9. --man                    :  Specify the man file, if any. Would appear
+                                 when "man <package-name>" is used.
+
+ 10. --copyright              :  Specify the copyright file, if any.
+
+ 11. --outfile                :  Specify the file to which output build config
+                                 would be written to. File extension: .spalcfg.
+                                 If unspecified, the name would be:
+                                 <shellscript>.<pkgmgr>.<dist>.<comp>.spalcfg.
+
+ 12. -k, --keep-buildtree     :  Specify whether to keep the build tree in the
+                                 output directory after the package has been
+                                 built. Build tree is removed by default.
+
+ 13. -h, --help               :  Show this help section and exit.
+ 
+ 14. -v, --version            :  Show the version & copyright notice, then exit.
+
+## NOTE:
+  - On successful generation of build config file, spal prints the file name
+    to stdout along with its path.
+
+  - On build success, spal prints the .deb package name to stdout along with
+    its path.
+
+  - If an error occurs, relevant errorcode is displayed along with an error
+    message.
+
 ```
+
+# TODO
+
+- Refactor code into multiple related modules.
+- Add support for various other files in a .deb package (e.g: `changelog`)
+
+# Copyright
+
+```
+Copyright (c) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or later.
+This program has absolutely no warranty.
+```
+
+# Bug reports
+
+Report bugs to [arijitkdgit.official@gmail.com](mailto:arijitkdgit.official@gmail.com) or create an issue in the [Issues](https://github.com/ArijitKD/spal/issues) section.
+

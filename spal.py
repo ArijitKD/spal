@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-#!/usr/bin/env python3
-
 # File: ./spal.py
 #
 # spal - Scripts Package Assembler for Linux. Helps assemble your executable
@@ -48,13 +46,118 @@ USR_DIR = {
     "pkg" : "data/data/com.termux/files/usr"
 }
 
+VERSION = "1.0"
+VERSION_TEXT = \
+f'''spal {VERSION}
+Copyright (c) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or later.
+This program has absolutely no warranty.'''
+
+HELP_TEXT = \
+f'''Help for spal (version {VERSION})
+
+spal: Scripts Package Assembler for Linux. Helps assemble executable scripts
+into distributable packages. Currently supports building .deb packages only.
+''' \
+'''
+#1 Possible usage patterns:
+  1. spal {-g | --generate-buildcfg} \\
+         --pkgmgr <pkg-mgr> \\
+         --dist <dist> \\
+         --comp <comp> \\
+         --shellscript <shell-script> \\
+         --control <control-file> \\
+         [--srcroot <src-rootdir> [--exclude <file-1> ... <file-n>]] \\
+         [--man <man-filename>] \\
+         [--copyright <copyright-filename>] \\
+         [--outfile <output-filename>]
+  2. spal [{-k | --keep-buildtree}] <buildcfg> <outdir>
+  3. spal [{-h | --help}]
+  4. spal {-v | --version}
+
+#2 Meanings of notations used above:
+  - <...>       :  A mandatory value for the preceding option. A
+                   value must not contain a space anywhere.
+
+  - {... | ...} :  A shorthand and full name for the same option.
+
+  - [...]       :  Non-mandatory options.
+  
+  - [... [...]] :  Two non-mandatory options, but the inner option
+                   may not be specified without the outer option.
+'''\
+f'''
+#3 Available options:
+  1. -g, --generate-buildcfg  :  Specify to generate a build config file. See
+                                 section #1 pattern (1) for usage.
+
+  2. --pkgmgr                 :  Specify the package manager to be used for the
+                                 build process. Currently supported package
+                                 managers are: {SUPPORTED_PACKAGE_MANAGERS}.
+
+  3. --dist                   :  Specify the package distribution name (e.g.,
+                                 "stable").
+
+  4. --comp                   :  Specify the package component name (e.g.,
+                                 "main").
+
+  5. --shellscript            :  Specify the main executable shell script that
+                                 would put in /usr/bin.
+
+  6. --control                :  Specify the control file for building the .deb
+                                 package.
+
+  7. --srcroot                :  Specify the root directory of the source tree,
+                                 if any. Installed package puts source files at
+                                 /usr/lib/<package-name>.
+
+  8. --exclude                :  Specify the files in the source root directory
+                                 that would be excluded. May be specified only
+                                 when --srcroot is specified.
+
+  9. --man                    :  Specify the man file, if any. Would appear
+                                 when "man <package-name>" is used.
+
+ 10. --copyright              :  Specify the copyright file, if any.
+
+ 11. --outfile                :  Specify the file to which output build config
+                                 would be written to. File extension: .spalcfg.
+                                 If unspecified, the name would be:
+                                 <shellscript>.<pkgmgr>.<dist>.<comp>.spalcfg.
+
+ 12. -k, --keep-buildtree     :  Specify whether to keep the build tree in the
+                                 output directory after the package has been
+                                 built. Build tree is removed by default.
+
+ 13. -h, --help               :  Show this help section and exit.
+ 
+ 14. -v, --version            :  Show the version & copyright notice, then exit.
+
+## NOTE:
+  - On successful generation of build config file, spal prints the file name
+    to stdout along with its path.
+
+  - On build success, spal prints the .deb package name to stdout along with
+    its path.
+
+  - If an error occurs, relevant errorcode is displayed along with an error
+    message.
+'''
+
 ERR_FILE_NOT_FOUND = -2
 ERR_UNSUPPORTED_PACKAGE_MANAGER = -3
 ERR_NO_PACKAGE_NAME = -4
 ERR_NO_VERSION_STRING = -5
+ERR_SRCROOT_UNSPECIFIED = -6
+ERR_SUBPROCESS_FAILED = -7
+ERR_SRCROOT_IS_CWD = -8
 
 errno: int = 0
 errdesc: str = ""
+
+cfgfile: str = ""
 
 
 def get_last_error() -> tuple:
@@ -69,6 +172,7 @@ def get_last_error() -> tuple:
 
 
 def get_package_name(control_text: str) -> str:
+    global errno, errdesc
     lines: list = control_text.split('\n')
     package: str = ""
     for line in lines:
@@ -82,6 +186,7 @@ def get_package_name(control_text: str) -> str:
 
 
 def get_version(control_text: str) -> str:
+    global errno, errdesc
     lines: list = control_text.split('\n')
     version: str = ""
     for line in lines:
@@ -260,6 +365,10 @@ def mk_copyright(buildcfg: dict, outdir: str) -> int:
         return -1
     docdir: str = os.path.join(usrdir, "share", "doc")
     package: str = get_package_name(buildcfg["control"])
+
+    if (not os.path.isdir(os.path.join(docdir, package))):
+        return 0
+
     copyrightfile: str = os.path.join(docdir, package, "copyright")
     with open(copyrightfile, 'w') as copyright:
         copyright.write(buildcfg["copyright"])
@@ -293,6 +402,10 @@ def mk_man(buildcfg: dict, outdir: str) -> int:
     if (usrdir == ""):
         return -1
     man1dir: str = os.path.join(usrdir, "share", "man", "man1")
+
+    if (not os.path.isdir(man1dir)):
+        return 0
+
     package: str = get_package_name(buildcfg["control"])
 
     gzman1file: str = os.path.join(man1dir, f"{package}.1") + ".gz"
@@ -316,6 +429,7 @@ def cp_sources(buildcfg: dict, outdir: str) -> int:
         return -1
     package: str = get_package_name(buildcfg["control"])
     destroot: str = os.path.join(usrdir, "lib", package)
+    rootdir: str = get_rootdir(buildcfg, outdir)
     for src in sources:
         dest: str = os.path.join(destroot, os.path.basename(src))
         if (os.path.isdir(src)):
@@ -343,8 +457,12 @@ def parse_args_gencfg(args: list) -> dict:
         "outfile"
     ]
     parsed_args: dict = {}
-    for arg in compulsory_args:
-        parsed_args[arg] = ""   # Avoid KeyError if absent
+    # Avoid KeyError if absent
+    for arg in (compulsory_args + optional_args):
+        if (arg == "exclude"):
+            parsed_args[arg] = []
+        else:
+            parsed_args[arg] = ""
     i: int = 1
     arg_count: int = len(args)
     while (i < arg_count):
@@ -353,12 +471,12 @@ def parse_args_gencfg(args: list) -> dict:
             j: int = i + 1
             arg = arg.lstrip("--")
             if (arg == "exclude"):
-                parsed_args[arg]: list = []
                 while (j < arg_count and not args[j].startswith("--")):
                     parsed_args[arg].append(args[j])
                     j += 1
             else:
-                parsed_args[arg]: str = args[j]
+                if (args[j].startswith("--")): return {}
+                else: parsed_args[arg]= args[j]
             i = j
         else:
             i += 1
@@ -384,57 +502,208 @@ def parse_args_build(args: list) -> list:
     return parsed_args
 
 
-def mkcfg(parsed_args: dict) -> int:
-    pass
+def mk_cfg(parsed_args: dict) -> int:
+    global cfgfile, errno, errdesc
+    cfgfile = os.path.basename(parsed_args["shellscript"]) + "." + \
+        parsed_args["pkgmgr"] + "." + parsed_args["dist"] + "." + \
+        parsed_args["comp"] + ".spalcfg"
+    if (parsed_args["outfile"] != ""):
+        cfgfile = parsed_args["outfile"]
+        cfgfile += ".spalcfg" if not cfgfile.endswith(".spalcfg") else ""
+
+    shfile: str = parsed_args["shellscript"]
+    if (not os.path.isfile(shfile)):
+        errno = ERR_FILE_NOT_FOUND
+        errdesc = f"File \"{shfile}\" not found."
+        return -1
+
+    ctrlfile: str = parsed_args["control"]
+    if (not os.path.isfile(ctrlfile)):
+        errno = ERR_FILE_NOT_FOUND
+        errdesc = f"File \"{ctrlfile}\" not found."
+        return -1
+
+    srcrootdir: str = parsed_args["srcroot"]
+    if (srcrootdir != "" and not os.path.isdir(srcrootdir)):
+        errno = ERR_FILE_NOT_FOUND
+        errdesc = f"Source root \"{srcrootdir}\" not found."
+        return -1
+
+    if (srcrootdir == "."):
+        errno = ERR_SRCROOT_IS_CWD
+        errdesc = f"Source root cannot be same as current working directory."
+        return -1
+
+    excluded_files: list = parsed_args["exclude"]
+    if (srcrootdir == "" and excluded_files != []):
+        errno = ERR_SRCROOT_UNSPECIFIED
+        errdesc = f"Attempted to exclude files without specifying source root."
+        return -1
+
+    manfile: list = parsed_args["man"]
+    if (manfile != "" and not os.path.isfile(manfile)):
+        errno = ERR_FILE_NOT_FOUND
+        errdesc = f"Man file \"{manfile}\" not found."
+        return -1
+
+    copyrightfile: list = parsed_args["copyright"]
+    if (copyrightfile != "" and not os.path.isfile(copyrightfile)):
+        errno = ERR_FILE_NOT_FOUND
+        errdesc = f"Copyright file \"{copyrightfile}\" not found."
+        return -1
+
+    spalconfig = open(cfgfile, 'w')
+    spalconfig.writelines([
+        "[PACKAGE-MANAGER]\n",
+        parsed_args["pkgmgr"] + "\n",
+        "[END]\n",
+        "\n\n",
+        "[DISTRIBUTION]\n",
+        parsed_args["dist"] + "\n",
+        "[END]\n",
+        "\n\n",
+        "[COMPONENT]\n",
+        parsed_args["comp"] + "\n",
+        "[END]\n",
+        "\n\n"
+    ])
+
+    shellscript: list = []
+    with open(shfile) as file:
+        shellscript = file.readlines()
+    spalconfig.writelines([
+        "[SHELLSCRIPT]\n"
+    ] + shellscript + ["[END]\n", "\n\n"])
+    
+    control: list = []
+    with open(ctrlfile) as file:
+        control = file.readlines()
+    spalconfig.writelines([
+        "[CONTROL]\n"
+    ] + control + ["[END]\n", "\n\n"])
+
+    if (srcrootdir != ""):
+        spalconfig.write("[SOURCES]\n")
+        for src in os.listdir(srcrootdir):
+            if (src not in excluded_files):
+                spalconfig.write(
+                    os.path.join(srcrootdir, src) + "\n"
+                )
+        spalconfig.writelines(["[END]\n", "\n\n"])
+
+    if (manfile != ""):
+        man: list = []
+        with open(manfile) as file:
+            man = file.readlines()
+        spalconfig.writelines([
+            "[MAN]\n"
+        ] + man + ["[END]\n", "\n\n"])
+
+    if (copyrightfile != ""):
+        copyright: list = []
+        with open(copyrightfile) as file:
+            copyright = file.readlines()
+        spalconfig.writelines([
+            "[COPYRIGHT]\n"
+        ] + copyright + ["[END]\n", "\n\n"])
+
+    spalconfig.close()
+    return 0
+
+
+def build_package(rootdir: str) -> int:
+    build_proc = subprocess.run(
+        ["dpkg", "--build", rootdir],
+        stdout = subprocess.PIPE,
+        stderr = subprocess.STDOUT,
+        text = True
+    )
+    if (build_proc.returncode != 0):
+        errno = ERR_SUBPROCESS_FAILED
+        errdesc = build_proc.stdout
+        return -1
+    return 0
+
+
+def show_help() -> None:
+    print(HELP_TEXT)
+
+
+def show_version() -> None:
+    print(VERSION_TEXT)
+
 
 def main() -> None:
-    '''
-    buildcfg = getcfg(sys.argv[1])
-    calls: list = [
-        mk_buildtree,
-        mk_control,
-        mk_copyright,
-        mk_shwrapper,
-        mk_man,
-        cp_sources
-    ]
-    outdir: str = sys.argv[2]
-    for call in calls:
-        if (call(buildcfg, outdir) != 0):
+    args: list = sys.argv[1:]
+
+    if (args == [] or args[0] in ("-h", "--help")):
+        show_help()
+        sys.exit(0)
+    
+    if (args[0] in ("-v", "--version")):
+        show_version()
+        sys.exit(0)
+
+    parsed_args_gencfg: dict = parse_args_gencfg(args)
+    parsed_args_build: dict = parse_args_build(args)
+    if (parsed_args_gencfg == {} and parsed_args_build == {}):
+        print(
+            "spal: Invalid arguments or combination of arguments.\n"
+            "Use \"spal -h\" to view help."
+        )
+        sys.exit(1)
+
+    if (parsed_args_gencfg != {}):
+        if (mk_cfg(parsed_args_gencfg) != 0):
+            error: tuple = get_last_error()
             print(
-                f"spal: Error in pre-build process (errorcode: {errno})\n"
-                f"Error message: {errdesc}"
+                f"spal: Error in generating build config (errorcode: {error[0]}).\n"
+                f"Error message:\n{error[1]}"
             )
             sys.exit(1)
-    sys.exit(0)
-    '''
-    print (parse_args_gencfg(sys.argv[1:]))
-    print (parse_args_build(sys.argv[1:]))
+        else:
+            print(cfgfile)
+            sys.exit(0)
+    if (parsed_args_build != {}):
+        buildcfg = getcfg(parsed_args_build["buildcfg"])
+        outdir: str = parsed_args_build["outdir"]
+        rootdir: str = get_rootdir(buildcfg, outdir)
+
+        calls: list = [
+            mk_buildtree,
+            mk_control,
+            mk_copyright,
+            mk_shwrapper,
+            mk_man,
+            cp_sources
+        ]
+        for call in calls:
+            if (call(buildcfg, outdir) != 0):
+                error: tuple = get_last_error()
+                print(
+                    f"spal: Error in pre-build process (errorcode: {error[0]})\n"
+                    f"Error message:\n{error[1]}"
+                )
+                sys.exit(1)
+
+        build_retcode: int = build_package(rootdir)
+
+        if (build_retcode != 0):
+            error: tuple = get_last_error()
+            print(
+                f"spal: Error in building package (errorcode: {error[0]}).\n"
+                f"Error message:\n{error[1]}"
+            )
+            sys.exit(1)
+        else:
+            print(rootdir + ".deb")
+
+        if (not parsed_args_build["keep-buildtree"]):
+            shutil.rmtree(rootdir)
+
+        sys.exit(build_retcode)
+                
 
 if (__name__ == "__main__"):
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
