@@ -1,0 +1,23 @@
+Origin: spal repository
+Label: spal
+Suite: stable
+Codename: stable
+Version: 1.0
+Architectures: all
+Components: main
+Description: Scripts Package Assembler for Linux. Helps assemble
+ executable scripts into distributable packages. Useful for
+ packaging Python and/or shell scipts.
+Date: Tue, 08 Jul 2025 00:11:50 +0000
+MD5Sum:
+ d718fcb70dd71109415eeadfdff9030b 426 dists/stable/main/binary-all/Packages.gz
+ 9e7074cec52d7388b79a8adb28d1787c 591 dists/stable/main/binary-all/Packages
+ 659a67d46d68843b3f504110d5bfa0da 8040 pool/main/spal_1.0_all.apt.stable.main.deb
+SHA1:
+ d5b6ee2a25c8cf74733f144b7828cb7efb1afe1a 426 dists/stable/main/binary-all/Packages.gz
+ b5dc8c3ba2889a8d1c537a2f6449fdf5cf2d319b 591 dists/stable/main/binary-all/Packages
+ b547c156b8114fb9169afbf39dbdb137c58bc69a 8040 pool/main/spal_1.0_all.apt.stable.main.deb
+SHA256:
+ 93148447f5d83fd4110e1814db4ca1219de9d65941c69c569f2adb23cb2dee32 426 dists/stable/main/binary-all/Packages.gz
+ b047bd01a841acc83d09f968283258381cf53495b80bf7974853b66b92cb588f 591 dists/stable/main/binary-all/Packages
+ 820034448d216221d742ef33d7e9c34c5ab8b1d337d7a4139b1c9dc1f8616386 8040 pool/main/spal_1.0_all.apt.stable.main.deb
