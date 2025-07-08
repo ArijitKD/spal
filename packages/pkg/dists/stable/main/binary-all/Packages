@@ -9,10 +9,10 @@ Homepage: https://github.com/ArijitKD/spal
 Description: Scripts Package Assembler for Linux. Helps assemble
  executable scripts into distributable packages. Useful for
  packaging Python and/or shell scipts.
-Filename: dists/stable/main/binary-all/spal_1.0_all.apt.stable.main.deb
-Size: 8040
-MD5Sum: 659a67d46d68843b3f504110d5bfa0da
-SHA1: b547c156b8114fb9169afbf39dbdb137c58bc69a
-SHA256: 820034448d216221d742ef33d7e9c34c5ab8b1d337d7a4139b1c9dc1f8616386
-SHA512: 3cbab42076690f76f593d0b5a4136dd50eed5e20df5ffc8350c311ac1bfcf5907a177aa3122cfba69e90265365281905c1114fde2d7ea73f57778c80ad38934b
+Filename: dists/stable/main/binary-all/spal_1.0_all.pkg.stable.main.deb
+Size: 8076
+MD5Sum: af24538e3ee919d4eade1706d4b97650
+SHA1: 61f1f6459fdd86ea95e283eea3f130a8132953a7
+SHA256: 008327387fe3fc85090afc44a8b804a4bd779e97ba2d5eb06550b6dc9ddc93ee
+SHA512: 2862df7496c6c7095779d22cb8ed3db88b3d439cf6d99b41bec7e8f6ccbdd80fc1ccf5c465eb40dc2b34f93b9ea806546a97777b527000b4a6e84b996b693f5b
 
