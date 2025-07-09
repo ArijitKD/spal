@@ -6,7 +6,7 @@ Scripts Package Assembler for Linux. Helps assemble executable scripts into dist
 ## Platform support
 
 - Currently supports `.deb` packages only
-- Supported package managers: `pkg`, `apt`.
+- Supported package managers: `pkg` (Termux), `apt` (Debian derivatives).
 
 ---
 
