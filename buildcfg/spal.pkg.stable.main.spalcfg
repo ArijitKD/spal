@@ -1,0 +1,225 @@
+[PACKAGE-MANAGER]
+pkg
+[END]
+
+
+[DISTRIBUTION]
+stable
+[END]
+
+
+[COMPONENT]
+main
+[END]
+
+
+[SHELLSCRIPT]
+#!/bin/bash
+#
+# File: /usr/bin/spal
+#
+# spal - Scripts Package Assembler for Linux. Helps assemble your executable
+# scripts into distributable packages.
+#
+#
+# Copyright (C) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+
+exec $HOME/../usr/bin/python3 $HOME/../usr/lib/spal/spal.py "$@"
+
+[END]
+
+
+[CONTROL]
+Package: spal
+Version: 1.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3
+Maintainer: Arijit Kumar Das <arijitkdgit.official@gmail.com>
+Homepage: https://github.com/ArijitKD/spal
+Description: Scripts Package Assembler for Linux. Helps assemble
+ executable scripts into distributable packages. Useful for
+ packaging Python and/or shell scipts.
+[END]
+
+
+[SOURCES]
+../src/spal.py
+[END]
+
+
+[MAN]
+.TH SPAL 1 "July 2025" "Version 1.0" "User Commands"
+
+.SH NAME
+spal \- Scripts Package Assembler for Linux
+
+.SH DESCRIPTION
+Helps assemble executable scripts into distributable packages.
+.br
+Currently supports building .deb packages only.
+
+.SH POSSIBLE USAGE PATTERNS
+1. spal \fB{-g | --generate-buildcfg}\fR \\
+         \fB--pkgmgr\fR <pkg-mgr> \\
+         \fB--dist\fR <dist> \\
+         \fB--comp\fR <comp> \\
+         \fB--shellscript\fR <shell-script> \\
+         \fB--control\fR <control-file> \\
+         [\fB--srcroot\fR <src-rootdir> [\fB--exclude\fR <file-1> ... <file-n>]] \\
+         [\fB--man\fR <man-filename>] \\
+         [\fB--copyright\fR <copyright-filename>] \\
+         [\fB--outfile\fR <output-filename>]
+.br
+2. spal [{\fB-k\fR | \fB--keep-buildtree\fR}] <buildcfg> <outdir>
+.br
+3. spal [{\fB-h\fR | \fB--help\fR}]
+.br
+4. spal {\fB-v\fR | \fB--version\fR}
+
+.SH NOTATION
+- <...>       :  A mandatory value for the preceding option. A
+.br
+                 value must not contain a space anywhere.
+.br
+.br
+- {... | ...} :  A shorthand and full name for the same option.
+.br
+.br
+- [...]       :  Non-mandatory options.
+.br
+.br
+- [... [...]] :  Two non-mandatory options, but the inner option
+.br
+                 may not be specified without the outer option.
+
+.SH OPTIONS
+The following options are available:
+
+.TP
+\fB1. -g, --generate-buildcfg\fR  
+Specify to generate a build config file. See section #1 pattern (1)
+for usage.
+
+.TP
+\fB2. --pkgmgr <pkg-mgr>\fR  
+Specify the package manager to be used for the build process. Currently
+supported package managers are: ['apt', 'pkg'].
+
+.TP
+\fB3. --dist <dist>\fR  
+Specify the package distribution name (e.g., "stable").
+
+.TP
+\fB4. --comp <comp>\fR  
+Specify the package component name (e.g., "main").
+
+.TP
+\fB5. --shellscript <shell-script>\fR  
+Specify the main executable shell script that would put in /usr/bin.
+
+.TP
+\fB6. --control <control-file>\fR  
+Specify the control file for building the .deb package.
+
+.TP
+\fB7. --srcroot <src-rootdir>\fR  
+Specify the root directory of the source tree, if any. Installed package
+puts source files at /usr/lib/<package-name>.
+
+.TP
+\fB8. --exclude <file-1> ... <file-n>\fR  
+Specify the files in the source root directory that would be excluded.
+May be specified only when --srcroot is specified.
+
+.TP
+\fB9. --man <man-filename>\fR  
+Specify the man file, if any. Would appear when "man <package-name>" is
+used.
+
+.TP
+\fB10. --copyright <copyright-filename>\fR  
+Specify the copyright file, if any.
+
+.TP
+\fB11. --outfile <output-filename>\fR  
+Specify the file to which output build config would be written to. File
+extension: .spalcfg. If unspecified, the name would be:
+<shellscript>.<pkgmgr>.<dist>.<comp>.spalcfg.
+
+.TP
+\fB12. -k, --keep-buildtree\fR  
+Specify whether to keep the build tree in the output directory after
+the package has been built. Build tree is removed by default.
+
+.TP
+\fB13. -h, --help\fR  
+Show this help section and exit.
+
+.TP
+\fB14. -v, --version\fR  
+Show the version & copyright notice, then exit.
+
+.SH NOTES
+\- On successful generation of build config file, spal prints the file
+  name to stdout along with its path.
+
+.br
+.br
+\- On build success, spal prints the .deb package name to stdout along
+  with its path.
+
+.br
+.br
+\- If an error occurs, relevant errorcode is displayed along with an
+  error message.
+
+.SH AUTHOR
+Wriiten by Arijit Kumar Das
+
+.SH COPYRIGHT
+Copyright (c) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This program is free software; you may redistribute it under the terms of
+the GNU General Public License version 3 or later.
+This program has absolutely no warranty.
+
+[END]
+
+
+[COPYRIGHT]
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: spal
+Source: https://github.com/ArijitKD/spal
+
+Files: *
+Copyright: 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
+License: GPL-3+
+
+License: GPL-3+
+ This package is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+ .
+ On Debian systems, the complete text of the GNU General Public License
+ version 3 can be found in "/usr/share/common-licenses/GPL-3".
+
+[END]
+
+
