@@ -1,8 +1,13 @@
-Codename: termux
-Version: 1
-Architectures: all
-Description: stable repository
+Origin: spal repository
+Label: spal
 Suite: stable
+Codename: stable
+Version: 1.1
+Architectures: all
+Components: main
+Description: Scripts Package Assembler for Linux. Helps assemble
+ executable scripts into distributable packages. Useful for
+ packaging Python and/or shell scipts.
 Date: Mon, 14 Jul 2025 01:26:49 UTC
 Components: main
 MD5Sum:
