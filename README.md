@@ -90,7 +90,7 @@ sudo apt install -f
 ## Help section:
 
 ```
-Help for spal (version 1.0)
+Help for spal (version 1.1)
 
 spal: Scripts Package Assembler for Linux. Helps assemble executable scripts
 into distributable packages. Currently supports building .deb packages only.
@@ -163,9 +163,15 @@ into distributable packages. Currently supports building .deb packages only.
                                  output directory after the package has been
                                  built. Build tree is removed by default.
 
- 13. -h, --help               :  Show this help section and exit.
+ 13. -s, --use-debstdname     :  Use the standard debian package naming scheme
+                                 for the output package file
+                                 (<pkg-name>_<ver>_all.deb). The package would
+                                 be put in the directory:
+                                 <outdir>/<pkgmgr>.<dist>.<comp>/
+
+ 14. -h, --help               :  Show this help section and exit.
  
- 14. -v, --version            :  Show the version & copyright notice, then exit.
+ 15. -v, --version            :  Show the version & copyright notice, then exit.
 
 ## NOTE:
   - On successful generation of build config file, spal prints the file name

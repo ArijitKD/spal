@@ -46,7 +46,7 @@ USR_DIR = {
     "pkg" : "data/data/com.termux/files/usr"
 }
 
-VERSION = "1.0"
+VERSION = "1.1"
 VERSION_TEXT = \
 f'''spal {VERSION}
 Copyright (c) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
@@ -73,7 +73,7 @@ into distributable packages. Currently supports building .deb packages only.
          [--man <man-filename>] \\
          [--copyright <copyright-filename>] \\
          [--outfile <output-filename>]
-  2. spal [{-k | --keep-buildtree}] <buildcfg> <outdir>
+  2. spal [{-k | --keep-buildtree}] [{-s | --debstdname}] <buildcfg> <outdir>
   3. spal [{-h | --help}]
   4. spal {-v | --version}
 
@@ -131,9 +131,15 @@ f'''
                                  output directory after the package has been
                                  built. Build tree is removed by default.
 
- 13. -h, --help               :  Show this help section and exit.
+ 13. -s, --use-debstdname     :  Use the standard debian package naming scheme
+                                 for the output package file
+                                 (<pkg-name>_<ver>_all.deb). The package would
+                                 be put in the directory:
+                                 <outdir>/<pkgmgr>.<dist>.<comp>/
+
+ 14. -h, --help               :  Show this help section and exit.
  
- 14. -v, --version            :  Show the version & copyright notice, then exit.
+ 15. -v, --version            :  Show the version & copyright notice, then exit.
 
 ## NOTE:
   - On successful generation of build config file, spal prints the file name
@@ -208,7 +214,7 @@ def getcfg(cfg: str) -> dict:
     global errno, errdesc
     if (not os.path.isfile(cfg)):
         errno = ERR_FILE_NOT_FOUND
-        errdesc = f"File {cfg} not found."
+        errdesc = f"File \"{cfg}\" not found."
         return {}
 
     buildcfg: dict = CFG_TEMPLATE.copy()
@@ -491,14 +497,28 @@ def parse_args_gencfg(args: list) -> dict:
 
 def parse_args_build(args: list) -> list:
     parsed_args: dict = {}
-    if (len(args) == 3 and args[0] in {"-k", "--keep-buildtree"}):
-        parsed_args["keep-buildtree"] = True
-        parsed_args["buildcfg"] = args[1]
-        parsed_args["outdir"] = args[2]
-    elif (len(args) == 2 and args[0] not in {"-k", "--keep-buildtree"}):
-        parsed_args["keep-buildtree"] = False
-        parsed_args["buildcfg"] = args[0]
-        parsed_args["outdir"] = args[1]
+
+    if (len(args) > 4):
+        return {}
+
+    if (args[-1].startswith("-") or
+        args[-2].startswith("-")):
+        return {}
+
+    parsed_args["outdir"] = args[-1]
+    parsed_args["buildcfg"] = args[-2]
+    parsed_args["keep-buildtree"] = False
+    parsed_args["use-debstdname"] = False
+
+    valid_options: set = {"-k", "--keep-buildtree", "-s", "--use-debstdname"}
+    for arg in args[0:-2]:
+        if (arg in {"-k", "--keep-buildtree"}):
+            parsed_args["keep-buildtree"] = True
+        elif (arg in {"-s", "--use-debstdname"}):
+            parsed_args["use-debstdname"] = True
+        else:
+            return {}
+
     return parsed_args
 
 
@@ -611,18 +631,35 @@ def mk_cfg(parsed_args: dict) -> int:
     return 0
 
 
-def build_package(rootdir: str) -> int:
+def build_package(rootdir: str, buildcfg = {}) -> str:
     build_proc = subprocess.run(
         ["dpkg", "--build", rootdir],
         stdout = subprocess.PIPE,
         stderr = subprocess.STDOUT,
         text = True
     )
+
+    debname: str = rootdir + ".deb"
     if (build_proc.returncode != 0):
         errno = ERR_SUBPROCESS_FAILED
         errdesc = build_proc.stdout
-        return -1
-    return 0
+        return ""
+
+    if (buildcfg != {}):
+        outdir: str = os.path.dirname(rootdir)
+        debdir_basename: str = buildcfg["pkgmgr"] + "." + \
+            buildcfg["dist"] + "." + buildcfg["comp"]
+        debdir: str = os.path.join(outdir, debdir_basename)
+        package: str = get_package_name(buildcfg["control"])
+        version: str = get_version(buildcfg["control"])
+        old_deb: str = rootdir + ".deb"
+        new_deb: str = os.path.join(debdir, package + "_" + \
+            version + "_all.deb")
+        os.makedirs(debdir, exist_ok = True)
+        os.rename(old_deb, new_deb)
+        debname = new_deb
+
+    return debname
 
 
 def show_help() -> None:
@@ -646,6 +683,7 @@ def main() -> None:
 
     parsed_args_gencfg: dict = parse_args_gencfg(args)
     parsed_args_build: dict = parse_args_build(args)
+
     if (parsed_args_gencfg == {} and parsed_args_build == {}):
         print(
             "spal: Invalid arguments or combination of arguments.\n"
@@ -667,6 +705,15 @@ def main() -> None:
     if (parsed_args_build != {}):
         buildcfg = getcfg(parsed_args_build["buildcfg"])
         outdir: str = parsed_args_build["outdir"]
+
+        if (buildcfg == {}):
+            error: tuple = get_last_error()
+            print(
+                f"spal: Error in pre-build process (errorcode: {error[0]})\n"
+                f"Error message:\n{error[1]}"
+            )
+            sys.exit(1)
+
         rootdir: str = get_rootdir(buildcfg, outdir)
 
         calls: list = [
@@ -686,9 +733,13 @@ def main() -> None:
                 )
                 sys.exit(1)
 
-        build_retcode: int = build_package(rootdir)
+        debname: str = ""
+        if (parsed_args_build["use-debstdname"]):
+            debname = build_package(rootdir, buildcfg)
+        else:
+            debname = build_package(rootdir)
 
-        if (build_retcode != 0):
+        if (debname == ""):
             error: tuple = get_last_error()
             print(
                 f"spal: Error in building package (errorcode: {error[0]}).\n"
@@ -696,12 +747,12 @@ def main() -> None:
             )
             sys.exit(1)
         else:
-            print(rootdir + ".deb")
+            print(debname)
 
         if (not parsed_args_build["keep-buildtree"]):
             shutil.rmtree(rootdir)
 
-        sys.exit(build_retcode)
+        sys.exit(debname == "")
                 
 
 if (__name__ == "__main__"):

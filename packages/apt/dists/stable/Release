@@ -1,23 +1,27 @@
-Origin: spal repository
-Label: spal
-Suite: stable
-Codename: stable
-Version: 1.0
+Codename: termux
+Version: 1
 Architectures: all
+Description: stable repository
+Suite: stable
+Date: Mon, 14 Jul 2025 01:26:49 UTC
 Components: main
-Description: Scripts Package Assembler for Linux. Helps assemble
- executable scripts into distributable packages. Useful for
- packaging Python and/or shell scipts.
-Date: Tue, 08 Jul 2025 00:11:50 +0000
 MD5Sum:
- d718fcb70dd71109415eeadfdff9030b 426 dists/stable/main/binary-all/Packages.gz
- 9e7074cec52d7388b79a8adb28d1787c 591 dists/stable/main/binary-all/Packages
- 659a67d46d68843b3f504110d5bfa0da 8040 pool/main/spal_1.0_all.apt.stable.main.deb
+ 4a0c2fe560802214e54ac3cd8cf4a3d4 1462 main/binary-all/Packages
+ 5c0baf5b2168d4b9658522e08d876580 768 main/binary-all/Packages.xz
+ dd382f02735479b9f1b81c98c1374da6 688 main/Contents-all
+ 8edc2f92eb9f55637c51f50f45adfdcf 140 main/Contents-all.xz
 SHA1:
- d5b6ee2a25c8cf74733f144b7828cb7efb1afe1a 426 dists/stable/main/binary-all/Packages.gz
- b5dc8c3ba2889a8d1c537a2f6449fdf5cf2d319b 591 dists/stable/main/binary-all/Packages
- b547c156b8114fb9169afbf39dbdb137c58bc69a 8040 pool/main/spal_1.0_all.apt.stable.main.deb
+ 13b52276cfacab79a55dc16910eab63447a8787b 1462 main/binary-all/Packages
+ 6bfb849dd9d7aa859cb34cf37c3a30f93a5b51ee 768 main/binary-all/Packages.xz
+ 68a602473dd51d606e3d99b654240b6fae82e195 688 main/Contents-all
+ 6bb1082883abb714e91eea1941e8c5923e3bc73d 140 main/Contents-all.xz
 SHA256:
- 93148447f5d83fd4110e1814db4ca1219de9d65941c69c569f2adb23cb2dee32 426 dists/stable/main/binary-all/Packages.gz
- b047bd01a841acc83d09f968283258381cf53495b80bf7974853b66b92cb588f 591 dists/stable/main/binary-all/Packages
- 820034448d216221d742ef33d7e9c34c5ab8b1d337d7a4139b1c9dc1f8616386 8040 pool/main/spal_1.0_all.apt.stable.main.deb
+ a02fb50d7a86bd0e56162adfe9b660d69c3cbc01f23b8211925ca84db11c4470 1462 main/binary-all/Packages
+ e521f616b1f1176a90f7d3cc65f0f8851c7964a2fb9a188c4ee7d4ce572e879a 768 main/binary-all/Packages.xz
+ 13f4eafb82c1cd03bb6f8437db3ac584aa7c8997cc311046f92cd7717a8c855b 688 main/Contents-all
+ 1834a5525e15c9a214b9f4c69663369fb3952f656abb343bc0e2d8690055cd91 140 main/Contents-all.xz
+SHA512:
+ e832b9943b035f453ab8d21d424bfb6e2588f7b28b3ed034756afaddb9df3af604f650f20149ff699912f36d0bfebccd2a16f486043bef480e63bfc6d0db7b62 1462 main/binary-all/Packages
+ 474537d12e0bcec8052b940135fc9b346828b51c026c70d4d4e60917a8190b431c4bc510c5295327b8d3436e38126ba5008de00ba525528cce122fe93d933c6e 768 main/binary-all/Packages.xz
+ 40c258140fc16d71fd8cf860277ab02b4d3a7f109d52d21603e62582a3d8216cbfbe7ff0c4ddb019b48239f8823bc7c7a3da371f518c2f5a994e59fb46c79872 688 main/Contents-all
+ ef8897ff77ca1c5a5d644ee30bd9089d8597e2e6c34ff4d495278364b18daa7b4e271631388a3406e78d4985120a5b27834fabd0ed58c6a173ce1a966bcba786 140 main/Contents-all.xz

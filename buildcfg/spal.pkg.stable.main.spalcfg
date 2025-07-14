@@ -45,7 +45,7 @@ exec $HOME/../usr/bin/python3 $HOME/../usr/lib/spal/spal.py "$@"
 
 [CONTROL]
 Package: spal
-Version: 1.0
+Version: 1.1
 Section: utils
 Priority: optional
 Architecture: all
@@ -59,12 +59,12 @@ Description: Scripts Package Assembler for Linux. Helps assemble
 
 
 [SOURCES]
-../src/spal.py
+src/spal.py
 [END]
 
 
 [MAN]
-.TH SPAL 1 "July 2025" "Version 1.0" "User Commands"
+.TH SPAL 1 "July 2025" "Version 1.1" "User Commands"
 
 .SH NAME
 spal \- Scripts Package Assembler for Linux
@@ -86,7 +86,7 @@ Currently supports building .deb packages only.
          [\fB--copyright\fR <copyright-filename>] \\
          [\fB--outfile\fR <output-filename>]
 .br
-2. spal [{\fB-k\fR | \fB--keep-buildtree\fR}] <buildcfg> <outdir>
+2. spal [{\fB-k\fR | \fB--keep-buildtree\fR}] [{\fB-s\fR | \fB--use-debstdname\fR}] <buildcfg> <outdir>
 .br
 3. spal [{\fB-h\fR | \fB--help\fR}]
 .br
@@ -168,6 +168,12 @@ Specify whether to keep the build tree in the output directory after
 the package has been built. Build tree is removed by default.
 
 .TP
+\fB12. -s, --use-debstdname\fR  
+Use the standard debian package naming scheme for the output package file
+(<pkg-name>_<ver>_all.deb). The package would be put in the directory:
+<outdir>/<pkgmgr>.<dist>.<comp>/.
+
+.TP
 \fB13. -h, --help\fR  
 Show this help section and exit.
 
@@ -190,7 +196,7 @@ Show the version & copyright notice, then exit.
   error message.
 
 .SH AUTHOR
-Wriiten by Arijit Kumar Das
+Written by Arijit Kumar Das
 
 .SH COPYRIGHT
 Copyright (c) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
