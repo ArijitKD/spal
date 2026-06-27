@@ -46,7 +46,7 @@ USR_DIR = {
     "pkg" : "data/data/com.termux/files/usr"
 }
 
-VERSION = "1.1"
+VERSION = "1.2"
 VERSION_TEXT = \
 f'''spal {VERSION}
 Copyright (c) 2025-Present Arijit Kumar Das <arijitkdgit.official@gmail.com>
@@ -73,7 +73,7 @@ into distributable packages. Currently supports building .deb packages only.
          [--man <man-filename>] \\
          [--copyright <copyright-filename>] \\
          [--outfile <output-filename>]
-  2. spal [{-k | --keep-buildtree}] [{-s | --debstdname}] <buildcfg> <outdir>
+  2. spal [{-k | --keep-buildtree}] [{-s | --debstdname}] [outdir] <buildcfg>
   3. spal [{-h | --help}]
   4. spal {-v | --version}
 
@@ -156,6 +156,7 @@ ERR_FILE_NOT_FOUND = -2
 ERR_UNSUPPORTED_PACKAGE_MANAGER = -3
 ERR_NO_PACKAGE_NAME = -4
 ERR_NO_VERSION_STRING = -5
+ERR_NO_ARCH_STRING = -9
 ERR_SRCROOT_UNSPECIFIED = -6
 ERR_SUBPROCESS_FAILED = -7
 ERR_SRCROOT_IS_CWD = -8
@@ -184,7 +185,7 @@ def get_package_name(control_text: str) -> str:
     for line in lines:
         line = line.strip()
         if (line.startswith("Package:")):
-            package = line[line.index(':') + 1 :].strip()
+            package = line.split(":")[-1].strip()
     if (package == ""):
         errno = ERR_NO_PACKAGE_NAME
         errdesc = "Control text has no package name"
@@ -198,11 +199,24 @@ def get_version(control_text: str) -> str:
     for line in lines:
         line = line.strip()
         if (line.startswith("Version:")):
-            version = line[line.index(':') + 1 :].strip()
+            version = line.split(":")[-1].strip()
     if (version == ""):
         errno = ERR_NO_VERSION_STRING
         errdesc = "Control text has no version string"
     return version
+
+
+def get_architecture(control_text: str) -> str:
+    global errno, errdesc
+    lines: list = control_text.split('\n')
+    arch: str = ""
+    for line in lines:
+        if (line.startswith("Architecture:")):
+            arch = line.split(":")[-1].strip()
+    if (arch == ""):
+        errno = ERR_NO_ARCH_STRING
+        errdesc = "Control text has no architecture string"
+    return arch
 
 
 def getcfg(cfg: str) -> dict:
@@ -501,35 +515,34 @@ def parse_args_build(args: list) -> list:
     if (len(args) > 4):
         return {}
 
-    if (args[-1].startswith("-") or
-        args[-2].startswith("-")):
+    if (args[-1].startswith("-")):
         return {}
 
-    parsed_args["outdir"] = args[-1]
-    parsed_args["buildcfg"] = args[-2]
+    valid_options: tuple = ("-k", "--keep-buildtree", "-s", "--use-debstdname")
+
+    parsed_args["outdir"] = "."
+    if ((len(args) > 1) and (args[-2] not in valid_options) and
+        (not args[-2].startswith("-"))):
+        parsed_args["outdir"] = args[-2]
+
+    parsed_args["buildcfg"] = args[-1]
     parsed_args["keep-buildtree"] = False
     parsed_args["use-debstdname"] = False
 
-    valid_options: set = {"-k", "--keep-buildtree", "-s", "--use-debstdname"}
-    for arg in args[0:-2]:
-        if (arg in {"-k", "--keep-buildtree"}):
+    for arg in args[0:2]:
+        if (arg in valid_options[0:2]):
             parsed_args["keep-buildtree"] = True
-        elif (arg in {"-s", "--use-debstdname"}):
+        elif (arg in valid_options[2:4]):
             parsed_args["use-debstdname"] = True
         else:
-            return {}
+            if (arg.startswith("-")):
+                return {}
 
     return parsed_args
 
 
 def mk_cfg(parsed_args: dict) -> int:
     global cfgfile, errno, errdesc
-    cfgfile = os.path.basename(parsed_args["shellscript"]) + "." + \
-        parsed_args["pkgmgr"] + "." + parsed_args["dist"] + "." + \
-        parsed_args["comp"] + ".spalcfg"
-    if (parsed_args["outfile"] != ""):
-        cfgfile = parsed_args["outfile"]
-        cfgfile += ".spalcfg" if not cfgfile.endswith(".spalcfg") else ""
 
     shfile: str = parsed_args["shellscript"]
     if (not os.path.isfile(shfile)):
@@ -572,6 +585,21 @@ def mk_cfg(parsed_args: dict) -> int:
         errdesc = f"Copyright file \"{copyrightfile}\" not found."
         return -1
 
+    control_text: str = ""
+    with open(ctrlfile) as file:
+        control_text = file.read()
+
+    pkg_name: str = get_package_name(control_text)
+    ver_name: str = get_version(control_text)
+    arch_name: str = get_architecture(control_text)
+
+    cfgfile = f"{pkg_name}_{ver_name}_{arch_name}" + "." + \
+        parsed_args["pkgmgr"] + "." + parsed_args["dist"] + "." + \
+        parsed_args["comp"] + ".spalcfg"
+    if (parsed_args["outfile"] != ""):
+        cfgfile = parsed_args["outfile"]
+        cfgfile += ".spalcfg" if not cfgfile.endswith(".spalcfg") else ""
+
     spalconfig = open(cfgfile, 'w')
     spalconfig.writelines([
         "[PACKAGE-MANAGER]\n",
@@ -594,7 +622,7 @@ def mk_cfg(parsed_args: dict) -> int:
     spalconfig.writelines([
         "[SHELLSCRIPT]\n"
     ] + shellscript + ["[END]\n", "\n\n"])
-    
+
     control: list = []
     with open(ctrlfile) as file:
         control = file.readlines()
@@ -650,11 +678,11 @@ def build_package(rootdir: str, buildcfg = {}) -> str:
         debdir_basename: str = buildcfg["pkgmgr"] + "." + \
             buildcfg["dist"] + "." + buildcfg["comp"]
         debdir: str = os.path.join(outdir, debdir_basename)
-        package: str = get_package_name(buildcfg["control"])
-        version: str = get_version(buildcfg["control"])
+        pakg: str = get_package_name(buildcfg["control"])
+        ver: str = get_version(buildcfg["control"])
+        arch: str = get_architecture(buildcfg["control"])
         old_deb: str = rootdir + ".deb"
-        new_deb: str = os.path.join(debdir, package + "_" + \
-            version + "_all.deb")
+        new_deb: str = os.path.join(debdir, f"{pakg}_{ver}_{arch}.deb")
         os.makedirs(debdir, exist_ok = True)
         os.rename(old_deb, new_deb)
         debname = new_deb
@@ -702,6 +730,7 @@ def main() -> None:
         else:
             print(cfgfile)
             sys.exit(0)
+
     if (parsed_args_build != {}):
         buildcfg = getcfg(parsed_args_build["buildcfg"])
         outdir: str = parsed_args_build["outdir"]
