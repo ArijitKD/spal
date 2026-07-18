@@ -84,7 +84,7 @@ into distributable packages. Currently supports building .deb packages only.
   - {... | ...} :  A shorthand and full name for the same option.
 
   - [...]       :  Non-mandatory options.
-  
+
   - [... [...]] :  Two non-mandatory options, but the inner option
                    may not be specified without the outer option.
 '''\
@@ -138,7 +138,7 @@ f'''
                                  <outdir>/<pkgmgr>.<dist>.<comp>/
 
  14. -h, --help               :  Show this help section and exit.
- 
+
  15. -v, --version            :  Show the version & copyright notice, then exit.
 
 ## NOTE:
@@ -228,7 +228,7 @@ def getcfg(cfg: str) -> dict:
     global errno, errdesc
     if (not os.path.isfile(cfg)):
         errno = ERR_FILE_NOT_FOUND
-        errdesc = f"File \"{cfg}\" not found."
+        errdesc = f"Configuration file \"{cfg}\" not found."
         return {}
 
     buildcfg: dict = CFG_TEMPLATE.copy()
@@ -329,6 +329,9 @@ def get_rootdir(buildcfg: str, outdir: str) -> str:
 
 
 def get_usrdir(buildcfg: str, outdir: str) -> str:
+    '''
+    Get the path of the usr directory in the build tree.
+    '''
     rootdir: str = get_rootdir(buildcfg, outdir)
     if (rootdir == ""):
         return ""
@@ -369,8 +372,13 @@ def mk_control(buildcfg: dict, outdir: str) -> int:
     rootdir: str = get_rootdir(buildcfg, outdir)
     if (rootdir == ""):
         return -1
-    with open(os.path.join(rootdir, "DEBIAN", "control"), 'w') as control:
+
+    control_file: str = os.path.join(rootdir, "DEBIAN", "control")
+    with open(control_file, 'w') as control:
         control.write(buildcfg["control"])
+
+    # dpkg requires permissions on control file between 0o755 and 0o775
+    os.chmod(control_file, 0o775)
     return 0
 
 
@@ -454,8 +462,12 @@ def cp_sources(buildcfg: dict, outdir: str) -> int:
         dest: str = os.path.join(destroot, os.path.basename(src))
         if (os.path.isdir(src)):
             shutil.copytree(src, dest, dirs_exist_ok = True)
-        else:
+        elif (os.path.isfile(src)):
             shutil.copy2(src, dest)
+        else:
+            errno = ERR_FILE_NOT_FOUND
+            errdesc = f"File/directory \"{src}\" not found."
+            return -1
     return 0
 
 
@@ -512,7 +524,7 @@ def parse_args_gencfg(args: list) -> dict:
 def parse_args_build(args: list) -> list:
     parsed_args: dict = {}
 
-    if (len(args) > 4):
+    if (len(args) > 4 or len(args) < 2):
         return {}
 
     if (args[-1].startswith("-")):
@@ -704,7 +716,7 @@ def main() -> None:
     if (args == [] or args[0] in ("-h", "--help")):
         show_help()
         sys.exit(0)
-    
+
     if (args[0] in ("-v", "--version")):
         show_version()
         sys.exit(0)
@@ -782,7 +794,7 @@ def main() -> None:
             shutil.rmtree(rootdir)
 
         sys.exit(debname == "")
-                
+
 
 if (__name__ == "__main__"):
     main()
